@@ -1,7 +1,7 @@
 import os
 import fitz
 
-from extract import ocr_from_bytes, save_text, save_image
+from extract import ocr_from_bytes_trim, save_text, save_image
 from path_utils import makedir
 
 # Output directory for the extracted images
@@ -35,7 +35,7 @@ for page_index in range(len(pdf_file)):
         # print(f"Page {page_index}, Extension is {image_ext}")
         file_name_base = f"image{str(page_index+1).zfill(3)}_{image_index+1}"
 
-        page_text = ocr_from_bytes(image_bytes, extracted_image['width'], extracted_image['height'])
+        page_text = ocr_from_bytes_trim(image_bytes, extracted_image['width'], extracted_image['height'], page_index)
         # page_text, misspelled_words = spell_check(page_text)
         # unique_misspelled_words |= misspelled_words
         # print(unique_misspelled_words)

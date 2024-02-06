@@ -25,18 +25,18 @@ formats = {
     }
 }
 
-def ocr_from_bytes_trim(image_bytes, width, height):
+def ocr_from_bytes_trim(image_bytes, width, height, page_num):
     numpy_array = np.frombuffer(image_bytes, np.uint8)
     image = cv2.imdecode(numpy_array, cv2.IMREAD_COLOR)
     image = image[0:1540, 0:image.shape[0]]
-    return ocr_from_cv_image(image, width, height)
+    return ocr_from_cv_image(image, width, height, page_num)
 
 def ocr_from_bytes(image_bytes, width, height):
     numpy_array = np.frombuffer(image_bytes, np.uint8)
     image = cv2.imdecode(numpy_array, cv2.IMREAD_COLOR)
     return ocr_from_cv_image(image, width, height)
 
-def ocr_from_cv_image(cv_image, width, height):
+def ocr_from_cv_image(cv_image, width, height, page_num):
     # print(f"Width x Height = {cv2.boundingRect(image)[2]} x {cv2.boundingRect(image)[3]}")
     larger_image= cv2.resize(cv_image, (width, height), fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
 
@@ -47,6 +47,7 @@ def ocr_from_cv_image(cv_image, width, height):
 
     # Find contours in the binary image
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    print(f"Page {str(page_num).zfill(3)}, Contours: {len(contours)}")
 
     # Sort the contours top-to-bottom (since that's the order text would be in)
     sorted_contours = sorted(contours, key=lambda contour: (cv2.boundingRect(contour)[1], cv2.boundingRect(contour)[0]))
