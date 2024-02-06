@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "image-pdf-extract"
+version = "0.1.0"
+description = ""
+authors = ["Rajesh J Advani <rajeshjadvani@yahoo.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+langchain = "^0.1.5"
+langchain-openai = "^0.0.5"
+openai = "^1.11.0"
+pytesseract = "^0.3.10"
+pymupdf = "^1.23.21"
+pillow = "^10.2.0"
+opencv-python = "^4.9.0.80"
+numpy = "^1.26.3"
+pyspellchecker = "^0.8.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
