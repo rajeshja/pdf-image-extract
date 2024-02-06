@@ -713,3 +713,5 @@ convert -respect-parenthesis \( $tmpA1 $cropping $makegray $enhancing \) \
 	"$outfile"
 
 exit 0
+
+#fixed line-endings
