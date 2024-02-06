@@ -25,6 +25,11 @@ formats = {
     }
 }
 
+def ocr_from_bytes_trim(image_bytes, width, height):
+    numpy_array = np.frombuffer(image_bytes, np.uint8)
+    image = cv2.imdecode(numpy_array, cv2.IMREAD_COLOR)
+    image = image[0:1540, 0:image.shape[0]]
+    return ocr_from_cv_image(image, width, height)
 
 def ocr_from_bytes(image_bytes, width, height):
     numpy_array = np.frombuffer(image_bytes, np.uint8)

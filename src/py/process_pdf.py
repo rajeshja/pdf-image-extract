@@ -2,9 +2,11 @@ import os
 import fitz
 
 from extract import ocr_from_bytes, save_text, save_image
+from path_utils import makedir
 
 # Output directory for the extracted images
 output_dir = "c:/temp/dnd-rulebooks/images"
+text_subdir = "text"
 # Desired output image format
 output_format = "jpeg"
 # Minimum width and height for extracted images
@@ -13,10 +15,10 @@ min_height = 100
 
 unique_misspelled_words = set()
 # Create the output directory if it does not exist
-if not os.path.exists(output_dir):
-    os.makedirs(output_dir)
+makedir(output_dir)
+makedir(os.path.join(output_dir, text_subdir))
 
-book1 = 'E:/GoogleDrive/RPG/AD&D 5e - Player\'s Handbook - Wizards of the Coast.pdf'
+book1 = 'G:/My Drive/RPG/AD&D 5e - Player\'s Handbook - Wizards of the Coast.pdf'
 
 pdf_file = fitz.open(book1)
 
@@ -38,6 +40,6 @@ for page_index in range(len(pdf_file)):
         # unique_misspelled_words |= misspelled_words
         # print(unique_misspelled_words)
         # print(f"Writing text to: {os.path.join(output_dir, 'text', file_name_base)}.txt")
-        save_text(os.path.join(output_dir, "text", file_name_base), page_text)
+        save_text(os.path.join(output_dir, text_subdir, file_name_base), page_text)
 
         save_image(os.path.join(output_dir, file_name_base), image_ext, min_width, min_height, image_bytes)
