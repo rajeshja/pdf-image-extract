@@ -25,31 +25,76 @@ formats = {
     }
 }
 
-def ocr_from_bytes_trim(image_bytes, width, height, page_num):
+def image_byes_to_cv2(image_bytes):
+    numpy_array = np.frombuffer(image_bytes, np.uint8)
+    image = cv2.imdecode(numpy_array, cv2.IMREAD_COLOR)
+    return image
+
+def image_byes_to_trimmed_cv2(image_bytes):
     numpy_array = np.frombuffer(image_bytes, np.uint8)
     image = cv2.imdecode(numpy_array, cv2.IMREAD_COLOR)
     image = image[0:1540, 0:image.shape[0]]
-    return ocr_from_cv_image(image, width, height, page_num)
+    return image
+
+def ocrdata_from_trimmed_bytes(image_bytes, width, height, page_num):
+    image = image_byes_to_trimmed_cv2(image_bytes)
+    return ocrdata_from_cv_image_nocontours(image, width, height, page_num)
+
+def ocr_from_bytes_trim(image_bytes, width, height, page_num):
+    image = image_byes_to_trimmed_cv2(image_bytes)
+    return ocr_from_cv_image_nocontours(image, width, height, page_num)
 
 def ocr_from_bytes(image_bytes, width, height):
-    numpy_array = np.frombuffer(image_bytes, np.uint8)
-    image = cv2.imdecode(numpy_array, cv2.IMREAD_COLOR)
+    image = image_byes_to_cv2(image_bytes)
     return ocr_from_cv_image(image, width, height)
+
+def ocr_from_cv_image_nocontours(cv_image, width, height, page_num):
+    # print(f"Width x Height = {cv2.boundingRect(image)[2]} x {cv2.boundingRect(image)[3]}")
+    larger_image= cv2.resize(cv_image, (width, height), fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
+    gray = cv2.cvtColor(larger_image, cv2.COLOR_BGR2GRAY)
+
+    text = pytesseract.image_to_string(gray)
+    return text
+
+def ocrdata_from_cv_image_nocontours(cv_image, width, height, page_num):
+    # print(f"Width x Height = {cv2.boundingRect(image)[2]} x {cv2.boundingRect(image)[3]}")
+    larger_image= cv2.resize(cv_image, (width, height), fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
+    gray = cv2.cvtColor(larger_image, cv2.COLOR_BGR2GRAY)
+
+    text = pytesseract.image_to_data(gray)
+    return text
+
+def ocrboxes_from_cv_image_nocontours(cv_image, width, height, page_num):
+    # print(f"Width x Height = {cv2.boundingRect(image)[2]} x {cv2.boundingRect(image)[3]}")
+    larger_image= cv2.resize(cv_image, (width, height), fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
+    gray = cv2.cvtColor(larger_image, cv2.COLOR_BGR2GRAY)
+
+    text = pytesseract.image_to_boxes(gray)
+    return text
+
+def xml_from_cv_image_nocontours(cv_image, width, height, page_num):
+    # print(f"Width x Height = {cv2.boundingRect(image)[2]} x {cv2.boundingRect(image)[3]}")
+    larger_image= cv2.resize(cv_image, (width, height), fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
+    gray = cv2.cvtColor(larger_image, cv2.COLOR_BGR2GRAY)
+
+    text = pytesseract.image_to_alto_xml(gray)
+    return text
+
+def hocr_from_cv_image_nocontours(cv_image, width, height, page_num):
+    # print(f"Width x Height = {cv2.boundingRect(image)[2]} x {cv2.boundingRect(image)[3]}")
+    larger_image= cv2.resize(cv_image, (width, height), fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
+    gray = cv2.cvtColor(larger_image, cv2.COLOR_BGR2GRAY)
+
+    text = pytesseract.image_to_pdf_or_hocr(gray, extension="hocr")
+    return text
 
 def ocr_from_cv_image(cv_image, width, height, page_num):
     # print(f"Width x Height = {cv2.boundingRect(image)[2]} x {cv2.boundingRect(image)[3]}")
     larger_image= cv2.resize(cv_image, (width, height), fx=4, fy=4, interpolation=cv2.INTER_CUBIC)
-
     gray = cv2.cvtColor(larger_image, cv2.COLOR_BGR2GRAY)
-
-    # Use adaptive thresholding to convert the image to binary
     binary = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, cv2.THRESH_BINARY, 11, 2)
-
-    # Find contours in the binary image
     contours, _ = cv2.findContours(binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    print(f"Page {str(page_num).zfill(3)}, Contours: {len(contours)}")
-
-    # Sort the contours top-to-bottom (since that's the order text would be in)
+    # Sort the contours top-to-bottom, left to right (since that's the order text would be in)
     sorted_contours = sorted(contours, key=lambda contour: (cv2.boundingRect(contour)[1], cv2.boundingRect(contour)[0]))
 
     # Perform OCR on each contour
@@ -86,8 +131,8 @@ def spell_check(text, custom_words = []):
 
     return text, misspelled
 
-def save_text(file_name_base, page_text):
-    with open(f"{file_name_base}.txt", 'w') as f:
+def save_text(file_name_base, page_text, ext="txt"):
+    with open(f"{file_name_base}.{ext}", 'w') as f:
         f.write(page_text)
 
 def save_image(file_name_base, format, min_width, min_height, image_bytes):

@@ -26,7 +26,8 @@ def spellcheck_files(directory):
 
     full_text = ""
 
-    for text_file in text_files:
+    for text_file in sorted(text_files, key=lambda name: int(os.path.basename(name)[5:-6])):
+        print(text_file)
         # file_name_prefix = text_file.split('.')[0:-1]
         # print(output_file)
 
@@ -40,11 +41,16 @@ def spellcheck_files(directory):
     full_text = cleanup(full_text)
     _, misspelled_words = spell_check(full_text)
 
+    from spellchecker import SpellChecker
+    spell = SpellChecker()
+
     makedir(os.path.join(directory, "cleaned"))
     misspelled_file = os.path.join(directory, "cleaned", "misspelled.txt")
     with open(misspelled_file, 'w') as file:
         for word in misspelled_words:
-            file.write(f"{word}\n")
+            correction = spell.correction(word)
+            print(f"{word} -> {correction}")
+            file.write(f"{word},{correction}\n")
 
     # Write the new text back to the file
     # output_file = os.path.join(directory, "cleaned", "all_text_cleaned.txt")
@@ -53,4 +59,4 @@ def spellcheck_files(directory):
 
 
 # Test the function
-spellcheck_files("c:/temp/dnd-rulebooks/images/text")
+spellcheck_files("C:\\temp\\dnd-rulebooks\\images\\cleaned_images\\trimmed-text-nocontours")
