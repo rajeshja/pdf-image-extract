@@ -41,7 +41,7 @@ def parse_xml(xml_file):
     return line
 
 # Call the function with your XML file path
-parse_xml('C:/temp/dnd-rulebooks/images/cleaned_images/xml-nocontours/image8_1.xml')
+# parse_xml('C:/temp/dnd-rulebooks/images/cleaned_images/xml-nocontours/image8_1.xml')
 
 import os, glob
 
@@ -61,6 +61,6 @@ for xml in sorted(xmls, key=lambda name: int(name.split(os.path.sep)[-1][5:-6]))
 if not os.path.exists(text_directory):
     os.makedirs(text_directory)
 
-with open(os.path.join(text_directory, "alltext.txt"), 'w') as file:
+with open(os.path.join(text_directory, "alltext.txt"), mode='w', encoding="utf8") as file:
     file.write(all_text)
 
