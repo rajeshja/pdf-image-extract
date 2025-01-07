@@ -4,6 +4,29 @@ from tkinter import filedialog
 from PIL import Image, ImageTk, ImageOps
 import cv2
 
+from enum import Enum
+class Contour_Size(Enum):
+    SMALL = (0, 0, 255, 255)
+    MEDIUM = (0, 255, 0, 255)
+    LARGE = (255, 0, 0, 255)
+
+def get_size(contour):
+    x, y, w, h = cv2.boundingRect(contour)
+    area = cv2.contourArea(contour)
+    boundsArea = w*h
+    areaPerc = 100*area/boundsArea
+    size = Contour_Size.LARGE
+    if areaPerc < 20:
+        size = Contour_Size.SMALL
+    elif areaPerc < 50:
+        size = Contour_Size.MEDIUM
+    elif boundsArea < 1000:
+        size = Contour_Size.SMALL
+    elif boundsArea < 5000:
+        size = Contour_Size.MEDIUM
+
+    return size
+
 class ImageViewer:
     def __init__(self, root):
         self.root = root
@@ -122,8 +145,27 @@ class ImageViewer:
             dilate = cv2.dilate(thresh, kernel, iterations=4)
             contours = cv2.findContours(dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             contours = contours[0] if len(contours) == 2 else contours[1]
-            image_with_rects = cv2.drawContours(image, contours, -1, (0, 0, 255, 255), 3)
-            processed_image = image_with_rects
+
+            bounding_rects = [cv2.boundingRect(contour) for contour in contours]
+
+            image_with_rectangles = cv2.cvtColor(dilate, cv2.COLOR_BGR2RGB)
+            # cv2.drawContours(image_with_rectangles, contours, -1, (0, 0, 255, 255), 3)
+
+            # Draw semi-transparent rectangles on the image
+            for i, contour in enumerate(contours):
+                x, y, w, h = cv2.boundingRect(contour)
+                # is_nested = is_nested(contour, i, contours)
+                cv2.rectangle(image_with_rectangles, (x+1, y+1), (x + w - 1, y + h - 1), (196, 196, 196, 64), -1)
+                # cv2.rectangle(image_with_rectangles, (x, y), (x + w, y + h), (0, 255, 255, 128), 4)
+
+            for i, contour in enumerate(contours):
+                x, y, w, h = cv2.boundingRect(contour)
+                # is_nested = is_nested(contour, i, contours)
+                # cv2.rectangle(image_with_rectangles, (x, y), (x + w, y + h), (196, 196, 196, 128), -1)
+                contour_color = get_size(contour).value
+                # cv2.drawContours(image_with_rectangles, [contour], 0, contour_color, 3)
+
+            processed_image = image_with_rectangles
             # Resize the processed image while maintaining aspect ratio
             height, width, _ = processed_image.shape
             processed_image = cv2.resize(processed_image, (750, int(750 * height / width)))
@@ -143,26 +185,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = ImageViewer(root)
     root.mainloop()
-
-
-        # if self.image_list:
-        #     image_path = self.image_list[self.current_image_index]
-        #     # Read the image using OpenCV
-        #     image = cv2.imread(image_path)
-        #     height, width = image.shape
-        #     # Convert the image to grayscale
-        #     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        #     blur = cv2.GaussianBlur(gray, (7,7), 0)
-        #     thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
-        #     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
-        #     dilate = cv2.dilate(thresh, kernel, iterations=4)
-        #     contours = cv2.findContours(dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        #     contours = contours[0] if len(contours) == 2 else contours[1]
-        #     processed_image = cv2.drawContours(image, contours, -1, (0, 0, 255, 255), 3)
-        #     # Resize the processed image while maintaining aspect ratio
-        #     processed_image = cv2.resize(processed_image, (750, int(750 * height / width)))
-        #     # Convert the processed image to a format suitable for Tkinter
-        #     processed_image = Image.fromarray(processed_image)
-        #     self.processed_image = ImageTk.PhotoImage(processed_image)
-        #     self.processed_image_view.config(image=self.processed_image)
-
