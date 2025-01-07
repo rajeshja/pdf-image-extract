@@ -2,6 +2,7 @@ import os, re
 import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageTk, ImageOps
+import cv2
 
 class ImageViewer:
     def __init__(self, root):
@@ -26,6 +27,7 @@ class ImageViewer:
 
         self.prev_button = tk.Button(self.image_frame, text="Previous", command=self.show_previous_image)
         self.prev_button.pack(side=tk.TOP, pady=5)
+        self.root.bind('<Left>', lambda event: self.show_previous_image())
 
         # Create labels for images
         self.original_image_view = tk.Label(self.image_frame)
@@ -38,6 +40,8 @@ class ImageViewer:
 
         self.next_button = tk.Button(self.image_frame, text="Next", command=self.show_next_image)
         self.next_button.pack(side=tk.BOTTOM, pady=5)
+
+        self.root.bind('<Right>', lambda event: self.show_next_image())
 
         # Create process button
         self.process_button = tk.Button(self.main_frame, text="Process", command=self.process_image)
@@ -80,7 +84,7 @@ class ImageViewer:
             if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))],
             key=lambda x: extract_number(os.path.basename(x))
         )
-        self.current_image_index = 0
+        self.current_image_index = 6
         self.update_status()
 
     def show_image(self, index):
@@ -108,11 +112,23 @@ class ImageViewer:
     def process_image(self):
         if self.image_list:
             image_path = self.image_list[self.current_image_index]
-            image = Image.open(image_path)
-            # Example processing: Convert image to grayscale
-            processed_image = ImageOps.grayscale(image)
-            width, height = processed_image.size
-            processed_image = processed_image.resize((750, int(750 * height / width)))  # Maintain aspect ratio
+            # Read the image using OpenCV
+            image = cv2.imread(image_path)
+            # Convert the image to grayscale
+            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+            blur = cv2.GaussianBlur(gray, (7,7), 0)
+            thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+            kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
+            dilate = cv2.dilate(thresh, kernel, iterations=4)
+            contours = cv2.findContours(dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            contours = contours[0] if len(contours) == 2 else contours[1]
+            image_with_rects = cv2.drawContours(image, contours, -1, (0, 0, 255, 255), 3)
+            processed_image = image_with_rects
+            # Resize the processed image while maintaining aspect ratio
+            height, width, _ = processed_image.shape
+            processed_image = cv2.resize(processed_image, (750, int(750 * height / width)))
+            # Convert the processed image to a format suitable for Tkinter
+            processed_image = Image.fromarray(processed_image)
             self.processed_image = ImageTk.PhotoImage(processed_image)
             self.processed_image_view.config(image=self.processed_image)
 
@@ -127,3 +143,26 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = ImageViewer(root)
     root.mainloop()
+
+
+        # if self.image_list:
+        #     image_path = self.image_list[self.current_image_index]
+        #     # Read the image using OpenCV
+        #     image = cv2.imread(image_path)
+        #     height, width = image.shape
+        #     # Convert the image to grayscale
+        #     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        #     blur = cv2.GaussianBlur(gray, (7,7), 0)
+        #     thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+        #     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
+        #     dilate = cv2.dilate(thresh, kernel, iterations=4)
+        #     contours = cv2.findContours(dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        #     contours = contours[0] if len(contours) == 2 else contours[1]
+        #     processed_image = cv2.drawContours(image, contours, -1, (0, 0, 255, 255), 3)
+        #     # Resize the processed image while maintaining aspect ratio
+        #     processed_image = cv2.resize(processed_image, (750, int(750 * height / width)))
+        #     # Convert the processed image to a format suitable for Tkinter
+        #     processed_image = Image.fromarray(processed_image)
+        #     self.processed_image = ImageTk.PhotoImage(processed_image)
+        #     self.processed_image_view.config(image=self.processed_image)
+
