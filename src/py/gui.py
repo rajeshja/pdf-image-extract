@@ -6,8 +6,8 @@ from PIL import Image, ImageTk, ImageOps
 class ImageViewer:
     def __init__(self, root):
         self.root = root
-        self.root.title("Image Viewer")
-        self.root.geometry("1800x1200")  # Set a larger window size to accommodate two images
+        self.root.title("Image Processor")
+        self.root.geometry("1800x1200")  # Set a larger window size
 
         # Initialize variables
         self.image_list = []
@@ -50,6 +50,15 @@ class ImageViewer:
         self.status = tk.Label(root, text="No images loaded", bd=1, relief=tk.SUNKEN, anchor=tk.W)
         self.status.pack(side=tk.BOTTOM, fill=tk.X)
 
+        # Load default directory
+        self.load_default_directory()
+
+    def load_default_directory(self):
+        default_directory = 'C:/temp/dnd-rulebooks/pngs'
+        if os.path.exists(default_directory):
+            self.load_images(default_directory)
+            self.show_image(0)
+
     def select_directory(self):
         directory = filedialog.askdirectory()
         if directory:
@@ -68,10 +77,11 @@ class ImageViewer:
             image_path = self.image_list[index]
             image = Image.open(image_path)
             width, height = image.size
-            image = image.resize((750, int(750*height/width)))
+            image = image.resize((750, int(750 * height / width)))  # Maintain aspect ratio
             photo = ImageTk.PhotoImage(image)
             self.original_label.config(image=photo)
             self.original_label.image = photo
+            self.process_image()  # Automatically process the image
             self.update_status()
 
     def show_next_image(self):
@@ -91,7 +101,7 @@ class ImageViewer:
             # Example processing: Convert image to grayscale
             processed_image = ImageOps.grayscale(image)
             width, height = processed_image.size
-            processed_image = processed_image.resize((750, int(750*height/width)))
+            processed_image = processed_image.resize((750, int(750 * height / width)))  # Maintain aspect ratio
             self.processed_image = ImageTk.PhotoImage(processed_image)
             self.processed_label.config(image=self.processed_image)
 
@@ -106,7 +116,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     app = ImageViewer(root)
     root.mainloop()
-
-
-
-# image = image.resize((750, int(750*height/width)))
