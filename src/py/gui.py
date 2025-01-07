@@ -1,4 +1,4 @@
-import os
+import os, re
 import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageTk, ImageOps
@@ -24,6 +24,9 @@ class ImageViewer:
         self.processed_frame = tk.Frame(self.main_frame)
         self.processed_frame.pack(side=tk.RIGHT, expand=True, fill=tk.BOTH)
 
+        self.prev_button = tk.Button(self.image_frame, text="Previous", command=self.show_previous_image)
+        self.prev_button.pack(side=tk.TOP, pady=5)
+
         # Create labels for images
         self.original_label = tk.Label(self.image_frame)
         self.original_label.pack(expand=True)
@@ -32,8 +35,6 @@ class ImageViewer:
         self.processed_label.pack(expand=True)
 
         # Create navigation buttons
-        self.prev_button = tk.Button(self.image_frame, text="Previous", command=self.show_previous_image)
-        self.prev_button.pack(side=tk.TOP, pady=5)
 
         self.next_button = tk.Button(self.image_frame, text="Next", command=self.show_next_image)
         self.next_button.pack(side=tk.BOTTOM, pady=5)
