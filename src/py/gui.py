@@ -28,11 +28,11 @@ class ImageViewer:
         self.prev_button.pack(side=tk.TOP, pady=5)
 
         # Create labels for images
-        self.original_label = tk.Label(self.image_frame)
-        self.original_label.pack(expand=True)
+        self.original_image_view = tk.Label(self.image_frame)
+        self.original_image_view.pack(expand=True)
 
-        self.processed_label = tk.Label(self.processed_frame)
-        self.processed_label.pack(expand=True)
+        self.processed_image_view = tk.Label(self.processed_frame)
+        self.processed_image_view.pack(expand=True)
 
         # Create navigation buttons
 
@@ -67,9 +67,19 @@ class ImageViewer:
             self.show_image(0)
 
     def load_images(self, directory):
-        # Load image files from the directory
-        self.image_list = [os.path.join(directory, file) for file in os.listdir(directory)
-                           if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))]
+        # Define a helper function to extract numbers from filenames
+        def extract_number(filename):
+            # Use regex to find all numbers in the filename
+            numbers = re.findall(r'\d+', filename)
+            # Convert found numbers to integers and return the first one (or 0 if none found)
+            return int(numbers[0]) if numbers else 0
+
+        # Load image files from the directory and sort them numerically
+        self.image_list = sorted(
+            [os.path.join(directory, file) for file in os.listdir(directory)
+            if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))],
+            key=lambda x: extract_number(os.path.basename(x))
+        )
         self.current_image_index = 0
         self.update_status()
 
@@ -80,8 +90,8 @@ class ImageViewer:
             width, height = image.size
             image = image.resize((750, int(750 * height / width)))  # Maintain aspect ratio
             photo = ImageTk.PhotoImage(image)
-            self.original_label.config(image=photo)
-            self.original_label.image = photo
+            self.original_image_view.config(image=photo)
+            self.original_image_view.image = photo
             self.process_image()  # Automatically process the image
             self.update_status()
 
@@ -104,7 +114,7 @@ class ImageViewer:
             width, height = processed_image.size
             processed_image = processed_image.resize((750, int(750 * height / width)))  # Maintain aspect ratio
             self.processed_image = ImageTk.PhotoImage(processed_image)
-            self.processed_label.config(image=self.processed_image)
+            self.processed_image_view.config(image=self.processed_image)
 
     def update_status(self):
         if self.image_list:
