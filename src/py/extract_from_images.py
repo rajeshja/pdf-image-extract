@@ -6,7 +6,7 @@ import numpy as np
 
 from extract import ocr_from_cv_image, ocrdata_from_cv_image_nocontours, ocrboxes_from_cv_image_nocontours, xml_from_cv_image_nocontours, hocr_from_cv_image_nocontours, save_text
 
-img_directory = "c:/temp/dnd-rulebooks/images/cleaned_images/inverted"
+img_directory = "c:/temp/dnd-rulebooks/images/cleaned_images"
 text_directory = os.path.join(img_directory, "xml-nocontours")
 
 if not os.path.exists(text_directory):
