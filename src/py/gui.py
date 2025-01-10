@@ -107,7 +107,7 @@ class ImageViewer:
             if file.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp'))],
             key=lambda x: extract_number(os.path.basename(x))
         )
-        self.current_image_index = 6
+        self.current_image_index = 13
         self.update_status()
 
     def show_image(self, index):
@@ -140,19 +140,67 @@ class ImageViewer:
             # Convert the image to grayscale
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             blur = cv2.GaussianBlur(gray, (7,7), 0)
-            thresh = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
+            thresh = cv2.threshold(blur, 128, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)[1]
             kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5,5))
             dilate = cv2.dilate(thresh, kernel, iterations=4)
             contours = cv2.findContours(dilate, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
             contours = contours[0] if len(contours) == 2 else contours[1]
 
-            bounding_rects = [cv2.boundingRect(contour) for contour in contours]
+            def are_rects_close(rect1, rect2, threshold):
+                x1, y1, w1, h1 = rect1
+                x2, y2, w2, h2 = rect2
+                return not (x1 > x2 + w2 + threshold or x2 > x1 + w1 + threshold or
+                            y1 > y2 + h2 + threshold or y2 > y1 + h1 + threshold)
+
+            import numpy as np
+            # Merge contours based on proximity
+            merged_contours = []
+            gap_threshold=15
+
+            parent = list(range(len(contours)))
+
+            def find(x):
+                if parent[x] != x:
+                    parent[x] = find(parent[x])
+                return parent[x]
+
+            def union(x, y):
+                rootX = find(x)
+                rootY = find(y)
+                if rootX != rootY:
+                    parent[rootY] = rootX
+
+            # Check all pairs of contours for proximity
+            for i, contour in enumerate(contours):
+                if get_size(contour) == Contour_Size.SMALL:
+                    continue
+                x, y, w, h = cv2.boundingRect(contour)
+                for j, other_contour in enumerate(contours):
+                    if get_size(contour) == Contour_Size.SMALL:
+                        continue
+                    if i != j:
+                        ox, oy, ow, oh = cv2.boundingRect(other_contour)
+                        if are_rects_close((x, y, w, h), (ox, oy, ow, oh), gap_threshold):
+                            union(i, j)
+
+            # Group contours by their root parent
+            from collections import defaultdict
+            groups = defaultdict(list)
+            for i, contour in enumerate(contours):
+                root = find(i)
+                groups[root].append(contour)
+
+            # Merge contours in each group
+            for group in groups.values():
+                all_points = np.vstack(group)
+                hull = cv2.convexHull(all_points)
+                merged_contours.append(hull)
 
             image_with_rectangles = cv2.cvtColor(dilate, cv2.COLOR_BGR2RGB)
             # cv2.drawContours(image_with_rectangles, contours, -1, (0, 0, 255, 255), 3)
 
             # Draw semi-transparent rectangles on the image
-            for i, contour in enumerate(contours):
+            for i, contour in enumerate(merged_contours):
                 x, y, w, h = cv2.boundingRect(contour)
                 # is_nested = is_nested(contour, i, contours)
                 cv2.rectangle(image_with_rectangles, (x+1, y+1), (x + w - 1, y + h - 1), (196, 196, 196, 64), -1)
@@ -163,7 +211,8 @@ class ImageViewer:
                 # is_nested = is_nested(contour, i, contours)
                 # cv2.rectangle(image_with_rectangles, (x, y), (x + w, y + h), (196, 196, 196, 128), -1)
                 contour_color = get_size(contour).value
-                # cv2.drawContours(image_with_rectangles, [contour], 0, contour_color, 3)
+                cv2.drawContours(image_with_rectangles, [contour], 0, contour_color, 3)
+                cv2.rectangle(image_with_rectangles, (x, y), (x + w, y + h), (0, 255, 255, 128), 1)
 
             processed_image = image_with_rectangles
             # Resize the processed image while maintaining aspect ratio
